@@ -27,10 +27,15 @@ body {
 
 .mouse_grid {
     z-index: 999999;
-    display: none;
-    grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
-    max-height: 100vh;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: repeat(52, minmax(0, 1fr));
+    grid-template-rows: repeat(26, minmax(0, 1fr));
+    height: 100vh;
+    width: 100vw;
     pointer-events: none;
+    overflow: hidden;
+
 }
 
 .mouse_grid_tile {
@@ -53,5 +58,5 @@ body {
 }
 
 .final-highlight {
-    background-color: rgb(13, 94, 13);
+    background-color: rgb(6, 136, 6);
 }

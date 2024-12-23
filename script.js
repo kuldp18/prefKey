@@ -1,185 +1,176 @@
 const state = {
-  isMouseGridOpen: false,
-  keysPressed: [],
-  potentialTiles: [],
-  proximityRadius: 1,
-  toggleMouseGrid: () => {
-    state.isMouseGridOpen = !state.isMouseGridOpen;
+  grid: document.querySelector(".mouse_grid"),
+  pressedKeys: [],
+  isFound: false,
+  oddValues: {
+    1: "A",
+    3: "B",
+    5: "C",
+    7: "D",
+    9: "E",
+    11: "F",
+    13: "G",
+    15: "H",
+    17: "I",
+    19: "J",
+    21: "K",
+    23: "L",
+    25: "M",
+    27: "N",
+    29: "O",
+    31: "P",
+    33: "Q",
+    35: "R",
+    37: "S",
+    39: "T",
+    41: "U",
+    43: "V",
+    45: "W",
+    47: "X",
+    49: "Y",
+    51: "Z",
+  },
+  evenValues: {
+    1: "A",
+    2: "B",
+    3: "C",
+    4: "D",
+    5: "E",
+    6: "F",
+    7: "G",
+    8: "H",
+    9: "I",
+    10: "J",
+    11: "K",
+    12: "L",
+    13: "M",
+    14: "N",
+    15: "O",
+    16: "P",
+    17: "Q",
+    18: "R",
+    19: "S",
+    20: "T",
+    21: "U",
+    22: "V",
+    23: "W",
+    24: "X",
+    25: "Y",
+    26: "Z",
   },
 };
 
-const GRID = document.querySelector(".mouse_grid");
-
-function handleKeyPresses(e) {
-  if (!state.isMouseGridOpen) return;
-
-  const keyPressed = e.key.toUpperCase();
-
-  if (keyPressed === "ENTER") {
-    if (state.potentialTiles.length === 1) {
-      const selectedTile = state.potentialTiles[0];
-      moveMouseToTile(selectedTile); // Move the mouse
-      selectedTile.click(); // Simulate a click
-      resetState(); // Reset state after a successful action
-    } else {
-      console.warn("Cannot finalize: Multiple or no tiles remain.");
-    }
-    return;
-  }
-
-  if (state.keysPressed.length === 0) {
-    // First key press: populate potentialTiles with matching tiles
-    state.potentialTiles = Array.from(
-      document.querySelectorAll(`.key_${keyPressed}`)
-    );
-
-    if (state.potentialTiles.length === 0) {
-      console.warn("No tiles match the first key press.");
-      return;
-    }
-
-    highlightTiles(state.potentialTiles);
-  } else {
-    // Subsequent key presses: refine the potentialTiles
-    const filteredTiles = filterByProximityAndKey(
-      state.potentialTiles,
-      keyPressed
-    );
-
-    if (filteredTiles.length === 0) {
-      console.warn("No matching tiles found for the given key.");
-    } else {
-      state.potentialTiles = filteredTiles;
-      highlightTiles(state.potentialTiles);
-      state.proximityRadius++;
-    }
-  }
-
-  state.keysPressed.push(keyPressed); // Add pressed key to the state
-}
-
-function filterByProximityAndKey(tiles, keyPressed) {
-  if (tiles.length === 0) return [];
-
-  const centerTile = tiles[0]; // The first tile becomes the center
-  const centerRow = parseInt(centerTile.dataset.row);
-  const centerCol = parseInt(centerTile.dataset.col);
-
-  return tiles.filter((tile) => {
-    if (tile.textContent.toUpperCase() !== keyPressed) return false;
-
-    const tileRow = parseInt(tile.dataset.row);
-    const tileCol = parseInt(tile.dataset.col);
-
-    return (
-      Math.abs(centerRow - tileRow) <= state.proximityRadius &&
-      Math.abs(centerCol - tileCol) <= state.proximityRadius
-    );
-  });
-}
-
-function highlightTiles(tiles) {
-  removeHighlight(document.querySelectorAll(".highlight"));
-
-  tiles.forEach((tile) => {
-    tile.classList.add("highlight");
-  });
-}
-
-function removeHighlight(tiles) {
-  tiles.forEach((tile) => {
-    tile.classList.remove("highlight");
-  });
-}
-
-function moveMouseToTile(tile) {
-  const rect = tile.getBoundingClientRect();
-  const x = rect.left + rect.width / 2;
-  const y = rect.top + rect.height / 2;
-
-  // Simulate mouse movement and click
-  const mouseMoveEvent = new MouseEvent("mousemove", {
-    clientX: x,
-    clientY: y,
-  });
-  const mouseClickEvent = new MouseEvent("click", {
-    clientX: x,
-    clientY: y,
-  });
-
-  document.dispatchEvent(mouseMoveEvent);
-  document.dispatchEvent(mouseClickEvent);
-
-  console.log(`Mouse moved to (${x}, ${y}) and clicked.`);
-}
-
-function resetState() {
-  state.keysPressed = [];
-  state.potentialTiles = [];
-  state.proximityRadius = 1;
-  removeHighlight(document.querySelectorAll(".highlight"));
-}
-
-function showOrHideMouseGrid() {
-  const mouseGrid = document.querySelector(".mouse_grid");
-  state.isMouseGridOpen
-    ? (mouseGrid.style.display = "grid")
-    : (mouseGrid.style.display = "none");
-}
-
-function generateRandomCharacter() {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const randomIndex = Math.floor(Math.random() * characters.length);
-  return characters[randomIndex];
-}
-
-function makeGridItem(grid, row, col) {
+function createTile(grid, text, type) {
   const div = document.createElement("div");
-  const key = generateRandomCharacter();
   div.classList.add("mouse_grid_tile");
-  div.classList.add(`key_${key}`);
-  div.textContent = key;
-  div.dataset.row = row;
-  div.dataset.col = col;
+  div.classList.add(type);
+  div.classList.add(`key_${text}`);
+  div.textContent = text;
   grid.appendChild(div);
 }
 
-function generateGrid(grid, tileWidth = 18) {
-  // Get viewport dimensions
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+function buildOddColumn(grid, text) {
+  for (let i = 1; i <= 26; i++) {
+    createTile(grid, text, "odd");
+  }
+}
 
-  // Calculate the number of rows and columns
-  const columns = Math.ceil(viewportWidth / tileWidth);
-  const rows = Math.ceil(viewportHeight / tileWidth);
+function buildEvenColumn(grid) {
+  for (let i = 1; i <= 26; i++) {
+    createTile(grid, state.evenValues[i], "even");
+  }
+}
 
-  // clear the grid
-  grid.innerHTML = "";
-
-  // populate the grid
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < columns; col++) {
-      makeGridItem(grid, row, col);
+function buildGrid(grid) {
+  for (let i = 1; i <= 52; i++) {
+    if (i % 2 === 0) {
+      buildEvenColumn(grid);
+    } else {
+      buildOddColumn(grid, state.oddValues[i]);
     }
   }
 }
 
-(function init() {
-  // generate grid with random characters
-  generateGrid(GRID, 18);
-  // show and hide the grid when the user presses ctrl + `
-  document.addEventListener("keydown", (e) => {
-    // listen for ctrl + ` key
-    if (e.ctrlKey && e.key === "`") {
-      state.toggleMouseGrid();
-      showOrHideMouseGrid();
+const highlightTiles = (pressedKeys) => {
+  const tiles = document.querySelectorAll(".mouse_grid_tile");
+  tiles.forEach((tile) => {
+    if (pressedKeys.includes(tile.textContent)) {
+      tile.classList.add("highlight");
+    } else {
+      tile.classList.remove("highlight");
     }
+  });
+};
 
-    // Handle keypress interaction
-    if (!e.ctrlKey) handleKeyPresses(e);
+const removeAllHighlights = () => {
+  const tiles = document.querySelectorAll(".mouse_grid_tile");
+  tiles.forEach((tile) => {
+    tile.classList.remove("highlight");
   });
-  // resize the grid when the window is resized
-  window.addEventListener("resize", () => {
-    generateGrid(GRID, 18);
-  });
-})();
+};
+
+function findPosition(key1, key2) {
+  // the location users wants is always equal to the distance of 26 in the dom tree from the first key to the second key
+
+  const keyElements1 = Array.from(
+    document.querySelectorAll(`div.odd.key_${key1}`)
+  );
+  const keyElements2 = Array.from(
+    document.querySelectorAll(`div.even.key_${key2}`)
+  );
+
+  // find the two elements that have a distance of 26
+  let keyElement1 = null;
+  let keyElement2 = null;
+  for (let i = 0; i < keyElements1.length; i++) {
+    for (let j = 0; j < keyElements2.length; j++) {
+      if (findDistance(keyElements1[i], keyElements2[j]) === 26) {
+        keyElement1 = keyElements1[i];
+        keyElement2 = keyElements2[j];
+        break;
+      }
+    }
+  }
+
+  return {
+    keyElement1,
+    keyElement2,
+  };
+}
+
+function findDistance(element1, element2) {
+  let distance = 0;
+  let currentElement = element1;
+  while (
+    currentElement !== element2 &&
+    currentElement.nextElementSibling !== null
+  ) {
+    distance++;
+    currentElement = currentElement.nextElementSibling;
+  }
+  return distance;
+}
+
+// Initialize the grid
+buildGrid(state.grid);
+
+document.addEventListener("keydown", (e) => {
+  let keyPressed = e.key.toUpperCase();
+
+  if (!state.isFound) {
+    if (state.pressedKeys.length === 2) {
+      const { keyElement1, keyElement2 } = findPosition(
+        state.pressedKeys[0],
+        state.pressedKeys[1]
+      );
+      keyElement1.classList.add("final-highlight");
+      keyElement2.classList.add("final-highlight");
+      state.pressedKeys = [];
+      state.isFound = true;
+      removeAllHighlights();
+    } else {
+      state.pressedKeys.push(keyPressed);
+      highlightTiles(state.pressedKeys);
+    }
+  }
+});
