@@ -2,6 +2,7 @@ const state = {
   grid: document.querySelector(".mouse_grid"),
   pressedKeys: [],
   isFound: false,
+  isGridOpen: false,
   oddValues: {
     1: "A",
     3: "B",
@@ -102,7 +103,7 @@ const highlightTiles = (pressedKeys) => {
   });
 };
 
-const removeAllHighlights = () => {
+const removeWhiteHighlights = () => {
   const tiles = document.querySelectorAll(".mouse_grid_tile");
   tiles.forEach((tile) => {
     tile.classList.remove("highlight");
@@ -111,6 +112,8 @@ const removeAllHighlights = () => {
 
 function findPosition(key1, key2) {
   // the location users wants is always equal to the distance of 26 in the dom tree from the first key to the second key
+
+  if (!state.isGridOpen) return;
 
   const keyElements1 = Array.from(
     document.querySelectorAll(`div.odd.key_${key1}`)
@@ -157,20 +160,46 @@ buildGrid(state.grid);
 document.addEventListener("keydown", (e) => {
   let keyPressed = e.key.toUpperCase();
 
-  if (!state.isFound) {
+  //listen for ctrl + `
+  if (e.ctrlKey && e.key === "`") {
+    state.isGridOpen = !state.isGridOpen;
+    resetState();
+    state.isGridOpen
+      ? (state.grid.style.visibility = "visible")
+      : (state.grid.style.visibility = "hidden");
+  }
+
+  if (!state.isFound && state.isGridOpen) {
     if (state.pressedKeys.length === 2) {
       const { keyElement1, keyElement2 } = findPosition(
         state.pressedKeys[0],
         state.pressedKeys[1]
       );
-      keyElement1.classList.add("final-highlight");
-      keyElement2.classList.add("final-highlight");
+      keyElement1?.classList.add("final-highlight");
+      keyElement2?.classList.add("final-highlight");
       state.pressedKeys = [];
       state.isFound = true;
-      removeAllHighlights();
+      removeWhiteHighlights();
     } else {
-      state.pressedKeys.push(keyPressed);
+      // push only A-Z keys
+      if (/[A-Z]/.test(keyPressed)) {
+        state.pressedKeys.push(keyPressed);
+      }
       highlightTiles(state.pressedKeys);
     }
   }
 });
+
+function removeGreenHighlights() {
+  const tiles = document.querySelectorAll(".mouse_grid_tile");
+  tiles.forEach((tile) => {
+    tile.classList.remove("final-highlight");
+  });
+}
+
+function resetState() {
+  state.isFound = false;
+  state.pressedKeys = [];
+  removeGreenHighlights();
+  removeWhiteHighlights();
+}
