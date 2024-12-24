@@ -1,8 +1,11 @@
 const state = {
   grid: document.querySelector(".mouse_grid"),
   pressedKeys: [],
+  targetElements: [],
+  oldKeys: [],
   isFound: false,
   isGridOpen: false,
+  didBreakDown: false,
   oddValues: {
     1: "A",
     3: "B",
@@ -135,6 +138,9 @@ function findPosition(key1, key2) {
     }
   }
 
+  state.targetElements = [keyElement1, keyElement2];
+  state.oldKeys = [keyElement1.textContent, keyElement2.textContent];
+
   return {
     keyElement1,
     keyElement2,
@@ -163,6 +169,7 @@ document.addEventListener("keydown", (e) => {
   //listen for ctrl + `
   if (e.ctrlKey && e.key === "`") {
     state.isGridOpen = !state.isGridOpen;
+    resetGridTiles(state);
     resetState();
     state.isGridOpen
       ? (state.grid.style.visibility = "visible")
@@ -177,8 +184,10 @@ document.addEventListener("keydown", (e) => {
       );
       keyElement1?.classList.add("final-highlight");
       keyElement2?.classList.add("final-highlight");
+
       state.pressedKeys = [];
       state.isFound = true;
+      breakDownGridTiles(state.targetElements);
       removeWhiteHighlights();
     } else {
       // push only A-Z keys
@@ -199,7 +208,80 @@ function removeGreenHighlights() {
 
 function resetState() {
   state.isFound = false;
+  state.didBreakDown = false;
+  state.oldKeys = [];
   state.pressedKeys = [];
+  state.targetElements = [];
   removeGreenHighlights();
   removeWhiteHighlights();
+}
+
+function breakDownGridTiles(elements, col = 2, row = 2) {
+  if (!elements || !state.isFound) return;
+  const [element1, element2] = elements;
+
+  // removeGreenHighlights();
+
+  // clear text content
+  element1.textContent = "";
+  element2.textContent = "";
+  // make them a grid
+  element1.style.display = "grid";
+  element2.style.display = "grid";
+
+  // create the grid
+  element1.style.gridTemplateColumns = `repeat(${col}, 1fr)`;
+  element1.style.gridTemplateRows = `repeat(${row}, 1fr)`;
+  element2.style.gridTemplateColumns = `repeat(${col}, 1fr)`;
+  element2.style.gridTemplateRows = `repeat(${row}, 1fr)`;
+
+  // create the children
+  let char = "A";
+  for (let i = 0; i < row; i++) {
+    for (let j = 0; j < col; j++) {
+      const div1 = document.createElement("div");
+      div1.textContent = char;
+      div1.classList.add("breakdown_tile");
+      div1.classList.add(`key_${char}`);
+      element1.appendChild(div1);
+      char = String.fromCharCode(char.charCodeAt(0) + 1);
+    }
+  }
+
+  for (let i = 0; i < row; i++) {
+    for (let j = 0; j < col; j++) {
+      const div2 = document.createElement("div");
+      div2.textContent = char;
+      div2.classList.add("breakdown_tile");
+      div2.classList.add(`key_${char}`);
+      element2.appendChild(div2);
+      char = String.fromCharCode(char.charCodeAt(0) + 1);
+    }
+  }
+
+  state.didBreakDown = true;
+}
+
+function resetGridTiles(state) {
+  if (!state.didBreakDown) return;
+  const [element1, element2] = state.targetElements;
+
+  // kill all childs of the element
+  element1.innerHTML = "";
+  element2.innerHTML = "";
+
+  element1.textContent = state.oldKeys[0];
+  element2.textContent = state.oldKeys[1];
+
+  element1.classList.add(`mouse_grid_tile`);
+  element1.classList.add(`key_${state.oldKeys[0]}`);
+
+  element2.classList.add(`mouse_grid_tile`);
+  element2.classList.add(`key_${state.oldKeys[1]}`);
+
+  // delete style attributes
+  element1.removeAttribute("style");
+  element2.removeAttribute("style");
+
+  state.oldKeys = [];
 }
