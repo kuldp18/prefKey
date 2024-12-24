@@ -18,8 +18,8 @@ body {
 }
 
 .button {
-    width: 18px;
-    height: 18px;
+    width: 25px;
+    height: 25px;
     background: #000;
     border-radius: 20px;
     position: absolute;
@@ -68,4 +68,5 @@ body {
     justify-content: center;
     align-items: center;
     outline: 0.5px solid white;
+    pointer-events: none;
 }

@@ -3,6 +3,7 @@ const state = {
   pressedKeys: [],
   targetElements: [],
   oldKeys: [],
+  finalElement: null,
   isFound: false,
   isGridOpen: false,
   didBreakDown: false,
@@ -197,11 +198,40 @@ document.addEventListener("keydown", (e) => {
       highlightTiles(state.pressedKeys);
     }
   }
+
+  // listen for breakdown grid
+  if (state.didBreakDown && state.isFound) {
+    if (e.key === "Escape") {
+      resetGridTiles(state);
+      resetState();
+    }
+
+    if (e.key === "Enter" && state.finalElement) {
+      console.log("Enter key pressed");
+      // remove the space final element is taking on the overlay grid
+      // click the final element
+      state.finalElement.click(); //why is this not working
+    }
+
+    let keyPressed = e.key.toUpperCase();
+    let finalElement = findFinalElement(state.targetElements, keyPressed);
+
+    if (finalElement) {
+      state.finalElement = finalElement;
+      removeGreenHighlights();
+      state.finalElement.classList.add("final-highlight");
+    }
+  }
 });
 
 function removeGreenHighlights() {
   const tiles = document.querySelectorAll(".mouse_grid_tile");
+  const breakDownTiles = document.querySelectorAll(".breakdown_tile");
   tiles.forEach((tile) => {
+    tile.classList.remove("final-highlight");
+  });
+
+  breakDownTiles.forEach((tile) => {
     tile.classList.remove("final-highlight");
   });
 }
@@ -212,6 +242,7 @@ function resetState() {
   state.oldKeys = [];
   state.pressedKeys = [];
   state.targetElements = [];
+  state.finalElement = null;
   removeGreenHighlights();
   removeWhiteHighlights();
 }
@@ -229,6 +260,10 @@ function breakDownGridTiles(elements, col = 2, row = 2) {
   element1.style.display = "grid";
   element2.style.display = "grid";
 
+  // pointer events
+  // element1.style.pointerEvents = "none";
+  // element2.style.pointerEvents = "none";
+
   // create the grid
   element1.style.gridTemplateColumns = `repeat(${col}, 1fr)`;
   element1.style.gridTemplateRows = `repeat(${row}, 1fr)`;
@@ -243,6 +278,7 @@ function breakDownGridTiles(elements, col = 2, row = 2) {
       div1.textContent = char;
       div1.classList.add("breakdown_tile");
       div1.classList.add(`key_${char}`);
+      // div1.style.pointerEvents = "none";
       element1.appendChild(div1);
       char = String.fromCharCode(char.charCodeAt(0) + 1);
     }
@@ -254,6 +290,7 @@ function breakDownGridTiles(elements, col = 2, row = 2) {
       div2.textContent = char;
       div2.classList.add("breakdown_tile");
       div2.classList.add(`key_${char}`);
+      // div2.style.pointerEvents = "none";
       element2.appendChild(div2);
       char = String.fromCharCode(char.charCodeAt(0) + 1);
     }
@@ -284,4 +321,24 @@ function resetGridTiles(state) {
   element2.removeAttribute("style");
 
   state.oldKeys = [];
+}
+
+function findFinalElement(targetElements, key) {
+  if (!targetElements || targetElements.length > 2) return;
+  let finalElement = null;
+
+  // find children of the target elements that have the key
+  const [element1, element2] = targetElements;
+  const children1 = Array.from(element1.children);
+  const children2 = Array.from(element2.children);
+  const total = [...children1, ...children2];
+
+  for (let i = 0; i < total.length; i++) {
+    if (total[i].textContent === key) {
+      finalElement = total[i];
+      break;
+    }
+  }
+
+  return finalElement;
 }
